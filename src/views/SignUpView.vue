@@ -13,19 +13,19 @@
             {{ errorMessage }}
           </v-alert>
 
-          <v-form ref="form" @submit.prevent="formValidation">
+          <v-form @submit.prevent="formValidation">
             <!-- Username Field -->
             <v-text-field variant="outlined" label="Username" v-model="username" required :counter="20"
-              :rules="usernameRules" placeholder="Choose a username"
+              :error-messages="usernameError" placeholder="Choose a username"
               hint="This will be your unique identity on BeyondTheBook."></v-text-field>
 
             <!-- Password Field -->
             <v-text-field variant="outlined" label="Password" v-model="password" type="password" required
-              :rules="passwordRules" placeholder="Choose a strong password"></v-text-field>
+              :error-messages="passwordError" placeholder="Choose a strong password"></v-text-field>
 
             <!-- Favorite Book Selection -->
             <v-select variant="outlined" :items="bookTitles" item-title="text" item-value="value"
-              :rules="favoriteBookRules" label="Which of these is your favorite book?" v-model="favoriteBookId"
+              :error-messages="favoriteBookError" label="Which of these is your favorite book?" v-model="favoriteBookId"
               hint="Don't worry, you can always update this later in your profile."
               placeholder="Select your favorite book">
             </v-select>
@@ -57,7 +57,9 @@ const username = ref('');
 const password = ref('');
 const books = ref([]);
 const errorMessage = ref("");
-const form = ref(null);
+const usernameError = ref("");
+const passwordError = ref("");
+const favoriteBookError = ref("");
 
 // Fetch books on component mount
 onMounted(async () => {
@@ -83,16 +85,45 @@ const bookTitles = computed(() => {
 
 const router = useRouter();
 
-// Form submission method
 const formValidation = () => {
-  errorMessage.value = "";
+  clearErrors();  // Clear previous errors
+  let isValid = true;
 
-  if (username.value.length === 0 || password.value.length === 0 || favoriteBookId.value.length === 0) {
-    errorMessage.value = "Please fill out all fields";
-  } else {
+  // Validate username
+  if (username.value.length === 0) {
+    usernameError.value = "Username is required.";
+    isValid = false;
+  } else if (username.value.length > 20) {
+    usernameError.value = "Username must be less than 20 characters";
+    isValid = false;
+  }
+
+  // Validate password
+  if (password.value.length === 0) {
+    passwordError.value = "Password is required.";
+    isValid = false;
+  } else if (password.value.length < 8) {
+    passwordError.value = "Password must be at least 8 characters.";
+    isValid = false;
+  }
+
+  // Validate favorite book selection
+  if (!favoriteBookId.value) {
+    favoriteBookError.value = "You must select a favorite book.";
+    isValid = false;
+  }
+
+  if (isValid) {
     submitForm();
   }
 }
+
+const clearErrors = () => {
+  usernameError.value = "";
+  passwordError.value = "";
+  favoriteBookError.value = "";
+}
+
 const submitForm = async () => {
   try {
     // Create the new user
@@ -135,21 +166,6 @@ const submitForm = async () => {
     errorMessage.value = error;
   }
 };
-
-// Password validation rules
-const usernameRules = [
-  v => !!v || 'Username is required',
-  v => (v && v.length <= 20) || 'Username must be less than 20 characters'
-];
-
-const passwordRules = [
-  v => !!v || 'Password is required',
-  v => (v && v.length >= 8) || 'Password must be at least 8 characters'
-];
-
-const favoriteBookRules = [
-  v => !!v || 'You must select a favorite book.'
-];
 </script>
 
 <style scoped>
